@@ -449,9 +449,9 @@ endmacro(CheckX11)
 #
 macro(CheckCOCOA)
   if(VIDEO_COCOA)
-    check_c_source_compiles("
-        #import <Cocoa/Cocoa.h>
-        int main (int argc, char** argv) {}" HAVE_VIDEO_COCOA)
+    if(APPLE)
+      set(HAVE_VIDEO_COCOA 1)
+    endif(APPLE)
     if(HAVE_VIDEO_COCOA)
       file(GLOB COCOA_SOURCES ${SDL2_SOURCE_DIR}/src/video/cocoa/*.m)
       set(SOURCE_FILES ${SOURCE_FILES} ${COCOA_SOURCES})
