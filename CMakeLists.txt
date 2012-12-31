@@ -126,6 +126,8 @@ else()
   set(OPT_DEF_ASM FALSE)
 endif(CMAKE_COMPILER_IS_GNUCC)
 
+if(NOT ANDROID) # FIXME: Skip this section for sanity
+    # FIXME: People may set CMAKE_C_FLAGS manually.
 # Default flags, if not set otherwise
 if("$ENV{CFLAGS}" STREQUAL "")
   if(USE_GCC OR USE_CLANG)
@@ -138,6 +140,7 @@ endif("$ENV{CFLAGS}" STREQUAL "")
 if(NOT ("$ENV{CFLAGS}" STREQUAL "")) # Hackish, but does the trick on Win32
   list(APPEND EXTRA_LDFLAGS "$ENV{LDFLAGS}")
 endif(NOT ("$ENV{CFLAGS}" STREQUAL ""))
+endif()
 
 # Those are used for pkg-config and friends, so that the SDL2.pc, sdl2-config,
 # etc. are created correctly.
@@ -667,12 +670,12 @@ if(UNIX AND NOT APPLE)
 
   if(SDL_JOYSTICK)
     CheckUSBHID()   # seems to be BSD specific - limit the test to BSD only?
-    if(LINUX)
+    if(LINUX AND NOT ANDROID)
       set(SDL_JOYSTICK_LINUX 1)
       file(GLOB JOYSTICK_SOURCES ${SDL2_SOURCE_DIR}/src/joystick/linux/*.c)
       set(SOURCE_FILES ${SOURCE_FILES} ${JOYSTICK_SOURCES})
       set(HAVE_SDL_JOYSTICK TRUE)
-    endif(LINUX)
+    endif(LINUX AND NOT ANDROID)
   endif(SDL_JOYSTICK)
 
   CheckPTHREAD()
@@ -1015,6 +1018,21 @@ endif(NOT HAVE_SDL_TIMERS)
 if(NOT SDLMAIN_SOURCES)
   file(GLOB SDLMAIN_SOURCES ${SDL2_SOURCE_DIR}/src/main/dummy/*.c)
 endif(NOT SDLMAIN_SOURCES)
+
+# Android sources
+if(ANDROID)
+    file(GLOB _android_srcs
+        src/audio/android/*.c
+        src/core/android/*.cpp
+        src/joystick/android/*.c
+        src/power/android/*.c
+        src/video/android/*.c
+        )
+    list(APPEND SOURCE_FILES
+        ${_android_srcs})
+    list(APPEND EXTRA_LIBS
+        dl GLESv1_CM GLESv2 log)
+endif()
 
 # Append the -MMD -MT flags
 # if(DEPENDENCY_TRACKING)
