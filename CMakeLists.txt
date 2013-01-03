@@ -1021,12 +1021,29 @@ endif(NOT SDLMAIN_SOURCES)
 
 # Android sources
 if(ANDROID)
+    # Override detections
+    set(SDL_AUDIO_DRIVER_ANDROID 1)
+    set(SDL_AUDIO_DRIVER_DUMMY 1)
+    set(SDL_JOYSTICK_ANDROID 1)
+    set(SDL_HAPTIC_DUMMY 1)
+    set(SDL_LOADSO_DLOPEN 1) 
+    set(SDL_THREAD_PTHREAD 1)
+    set(SDL_THREAD_PTHREAD_RECURSIVE_MUTEX 1)
+    set(SDL_TIMER_UNIX 1)
+    set(SDL_VIDEO_DRIVER_ANDROID 1)
+    set(SDL_VIDEO_OPENGL_ES 1)
+    unset(SDL_VIDEO_RENDER_OGL_ES)
+    #set(SDL_VIDEO_RENDER_OGL_ES 1)
+    #set(SDL_VIDEO_RENDER_OGL_ES2 1)
+    set(SDL_POWER_ANDROID 1)
+    # FIXME: GLOB.
     file(GLOB _android_srcs
         src/audio/android/*.c
         src/core/android/*.cpp
         src/joystick/android/*.c
         src/power/android/*.c
         src/video/android/*.c
+        src/main/android/SDL_android_main.cpp
         )
     list(APPEND SOURCE_FILES
         ${_android_srcs})
