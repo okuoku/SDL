@@ -47,10 +47,19 @@
 
 #elif SDL_VIDEO_DRIVER_ANDROID || SDL_VIDEO_DRIVER_VIVANTE
 /* Android */
-#define DEFAULT_EGL "libEGL.so"
-#define DEFAULT_OGL_ES2 "libGLESv2.so"
+#if 0
+#define DEFAULT_EGL "/system/lib/libEGL.so"
+#define DEFAULT_OGL_ES2 "/system/lib/libGLESv2.so"
 #define DEFAULT_OGL_ES_PVR "libGLES_CM.so"
 #define DEFAULT_OGL_ES "libGLESv1_CM.so"
+#endif
+#if 0
+#define DEFAULT_EGL "/data/data/org.libsdl.app/lib/libMGD.so"
+#define DEFAULT_OGL_ES2 DEFAULT_EGL
+#define DEFAULT_OGL_ES_PVR DEFAULT_EGL
+#define DEFAULT_OGL_ES DEFAULT_EGL
+#endif
+
 
 #elif SDL_VIDEO_DRIVER_WINDOWS || SDL_VIDEO_DRIVER_WINRT
 /* EGL AND OpenGL ES support via ANGLE */
@@ -68,12 +77,16 @@
 #define DEFAULT_OGL_ES "libGLESv1_CM.so.1"
 #endif /* SDL_VIDEO_DRIVER_RPI */
 
+#if 0
 #define LOAD_FUNC(NAME) \
 _this->egl_data->NAME = SDL_LoadFunction(_this->egl_data->dll_handle, #NAME); \
 if (!_this->egl_data->NAME) \
 { \
     return SDL_SetError("Could not retrieve EGL function " #NAME); \
 }
+#else
+#define LOAD_FUNC(NAME) _this->egl_data->NAME = NAME
+#endif
     
 /* EGL implementation of SDL OpenGL ES support */
 #ifdef EGL_KHR_create_context        
@@ -86,7 +99,7 @@ static int SDL_EGL_HasExtension(_THIS, const char *ext)
     const char *ext_word;
 
     ext_len = SDL_strlen(ext);
-    exts = _this->egl_data->eglQueryString(_this->egl_data->egl_display, EGL_EXTENSIONS);
+    exts = eglQueryString(_this->egl_data->egl_display, EGL_EXTENSIONS);
 
     if (exts) {
         ext_word = exts;
@@ -118,7 +131,7 @@ SDL_EGL_GetProcAddress(_THIS, const char *proc)
     /* eglGetProcAddress is busted on Android http://code.google.com/p/android/issues/detail?id=7681 */
 #if !defined(SDL_VIDEO_DRIVER_ANDROID) && !defined(SDL_VIDEO_DRIVER_MIR) 
     if (_this->egl_data->eglGetProcAddress) {
-        retval = _this->egl_data->eglGetProcAddress(proc);
+        retval = eglGetProcAddress(proc);
         if (retval) {
             return retval;
         }
@@ -139,7 +152,7 @@ SDL_EGL_UnloadLibrary(_THIS)
 {
     if (_this->egl_data) {
         if (_this->egl_data->egl_display) {
-            _this->egl_data->eglTerminate(_this->egl_data->egl_display);
+            eglTerminate(_this->egl_data->egl_display);
             _this->egl_data->egl_display = NULL;
         }
 
@@ -189,6 +202,7 @@ SDL_EGL_LoadLibrary(_THIS, const char *egl_path, NativeDisplayType native_displa
     }
 #endif
 
+#if 0
     /* A funny thing, loading EGL.so first does not work on the Raspberry, so we load libGL* first */
     path = SDL_getenv("SDL_VIDEO_GL_DRIVER");
     if (path != NULL) {
@@ -246,6 +260,7 @@ SDL_EGL_LoadLibrary(_THIS, const char *egl_path, NativeDisplayType native_displa
     }
 
     _this->egl_data->dll_handle = dll_handle;
+#endif
 
     /* Load new function pointers */
     LOAD_FUNC(eglGetDisplay);
@@ -267,12 +282,12 @@ SDL_EGL_LoadLibrary(_THIS, const char *egl_path, NativeDisplayType native_displa
     LOAD_FUNC(eglQueryString);
     
 #if !defined(__WINRT__)
-    _this->egl_data->egl_display = _this->egl_data->eglGetDisplay(native_display);
+    _this->egl_data->egl_display = eglGetDisplay(native_display);
     if (!_this->egl_data->egl_display) {
         return SDL_SetError("Could not get EGL display");
     }
     
-    if (_this->egl_data->eglInitialize(_this->egl_data->egl_display, NULL, NULL) != EGL_TRUE) {
+    if (eglInitialize(_this->egl_data->egl_display, NULL, NULL) != EGL_TRUE) {
         return SDL_SetError("Could not initialize EGL");
     }
 #endif
@@ -365,15 +380,15 @@ SDL_EGL_ChooseConfig(_THIS)
         } else {
             attribs[i++] = EGL_OPENGL_ES_BIT;
         }
-        _this->egl_data->eglBindAPI(EGL_OPENGL_ES_API);
+        eglBindAPI(EGL_OPENGL_ES_API);
     } else {
         attribs[i++] = EGL_OPENGL_BIT;
-        _this->egl_data->eglBindAPI(EGL_OPENGL_API);
+        eglBindAPI(EGL_OPENGL_API);
     }
 
     attribs[i++] = EGL_NONE;
 
-    if (_this->egl_data->eglChooseConfig(_this->egl_data->egl_display,
+    if (eglChooseConfig(_this->egl_data->egl_display,
         attribs,
         configs, SDL_arraysize(configs),
         &found_configs) == EGL_FALSE ||
@@ -398,7 +413,7 @@ SDL_EGL_ChooseConfig(_THIS)
                 attribs[j] == EGL_ALPHA_SIZE ||
                 attribs[j] == EGL_DEPTH_SIZE ||
                 attribs[j] == EGL_STENCIL_SIZE)) {
-                _this->egl_data->eglGetConfigAttrib(_this->egl_data->egl_display, configs[i], attribs[j], &value);
+                eglGetConfigAttrib(_this->egl_data->egl_display, configs[i], attribs[j], &value);
                 bitdiff += value - attribs[j + 1]; /* value is always >= attrib */
             }
         }
@@ -487,12 +502,12 @@ SDL_EGL_CreateContext(_THIS, EGLSurface egl_surface)
 
     /* Bind the API */
     if (profile_es) {
-        _this->egl_data->eglBindAPI(EGL_OPENGL_ES_API);
+        eglBindAPI(EGL_OPENGL_ES_API);
     } else {
-        _this->egl_data->eglBindAPI(EGL_OPENGL_API);
+        eglBindAPI(EGL_OPENGL_API);
     }
 
-    egl_context = _this->egl_data->eglCreateContext(_this->egl_data->egl_display,
+    egl_context = eglCreateContext(_this->egl_data->egl_display,
                                       _this->egl_data->egl_config,
                                       share_context, attribs);
 
@@ -525,9 +540,9 @@ SDL_EGL_MakeCurrent(_THIS, EGLSurface egl_surface, SDL_GLContext context)
      * with a valid context and invalid surface, so we have to check for both here.
      */
     if (!egl_context || !egl_surface) {
-         _this->egl_data->eglMakeCurrent(_this->egl_data->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+         eglMakeCurrent(_this->egl_data->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     } else {
-        if (!_this->egl_data->eglMakeCurrent(_this->egl_data->egl_display,
+        if (!eglMakeCurrent(_this->egl_data->egl_display,
             egl_surface, egl_surface, egl_context)) {
             return SDL_SetError("Unable to make EGL context current");
         }
@@ -545,7 +560,7 @@ SDL_EGL_SetSwapInterval(_THIS, int interval)
         return SDL_SetError("EGL not initialized");
     }
     
-    status = _this->egl_data->eglSwapInterval(_this->egl_data->egl_display, interval);
+    status = eglSwapInterval(_this->egl_data->egl_display, interval);
     if (status == EGL_TRUE) {
         _this->egl_data->egl_swapinterval = interval;
         return 0;
@@ -568,7 +583,7 @@ SDL_EGL_GetSwapInterval(_THIS)
 void
 SDL_EGL_SwapBuffers(_THIS, EGLSurface egl_surface)
 {
-    _this->egl_data->eglSwapBuffers(_this->egl_data->egl_display, egl_surface);
+    eglSwapBuffers(_this->egl_data->egl_display, egl_surface);
 }
 
 void
@@ -583,7 +598,7 @@ SDL_EGL_DeleteContext(_THIS, SDL_GLContext context)
     
     if (egl_context != NULL && egl_context != EGL_NO_CONTEXT) {
         SDL_EGL_MakeCurrent(_this, NULL, NULL);
-        _this->egl_data->eglDestroyContext(_this->egl_data->egl_display, egl_context);
+        eglDestroyContext(_this->egl_data->egl_display, egl_context);
     }
         
 }
@@ -601,7 +616,7 @@ SDL_EGL_CreateSurface(_THIS, NativeWindowType nw)
          * Ref: http://developer.android.com/reference/android/app/NativeActivity.html 
          */
         EGLint format;
-        _this->egl_data->eglGetConfigAttrib(_this->egl_data->egl_display,
+        eglGetConfigAttrib(_this->egl_data->egl_display,
                                             _this->egl_data->egl_config, 
                                             EGL_NATIVE_VISUAL_ID, &format);
 
@@ -609,7 +624,7 @@ SDL_EGL_CreateSurface(_THIS, NativeWindowType nw)
     }
 #endif    
     
-    return _this->egl_data->eglCreateWindowSurface(
+    return eglCreateWindowSurface(
             _this->egl_data->egl_display,
             _this->egl_data->egl_config,
             nw, NULL);
@@ -623,7 +638,7 @@ SDL_EGL_DestroySurface(_THIS, EGLSurface egl_surface)
     }
     
     if (egl_surface != EGL_NO_SURFACE) {
-        _this->egl_data->eglDestroySurface(_this->egl_data->egl_display, egl_surface);
+        eglDestroySurface(_this->egl_data->egl_display, egl_surface);
     }
 }
 
