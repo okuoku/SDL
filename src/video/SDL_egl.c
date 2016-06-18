@@ -47,19 +47,6 @@
 
 #elif SDL_VIDEO_DRIVER_ANDROID || SDL_VIDEO_DRIVER_VIVANTE
 /* Android */
-#if 0
-#define DEFAULT_EGL "/system/lib/libEGL.so"
-#define DEFAULT_OGL_ES2 "/system/lib/libGLESv2.so"
-#define DEFAULT_OGL_ES_PVR "libGLES_CM.so"
-#define DEFAULT_OGL_ES "libGLESv1_CM.so"
-#endif
-#if 0
-#define DEFAULT_EGL "/data/data/org.libsdl.app/lib/libMGD.so"
-#define DEFAULT_OGL_ES2 DEFAULT_EGL
-#define DEFAULT_OGL_ES_PVR DEFAULT_EGL
-#define DEFAULT_OGL_ES DEFAULT_EGL
-#endif
-
 
 #elif SDL_VIDEO_DRIVER_WINDOWS || SDL_VIDEO_DRIVER_WINRT
 /* EGL AND OpenGL ES support via ANGLE */
